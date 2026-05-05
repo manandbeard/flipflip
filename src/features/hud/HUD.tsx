@@ -1,8 +1,9 @@
 import { useEffect } from 'react';
 import { EventBus } from '@/game';
-import { usePlayerStore } from '@/entities/player/model/usePlayerStore';
-
-const MAX_HEALTH = 100;
+import {
+  MAX_PLAYER_HEALTH,
+  usePlayerStore,
+} from '@/entities/player/model/usePlayerStore';
 
 export function HUD() {
   const health = usePlayerStore((state) => state.health);
@@ -11,7 +12,11 @@ export function HUD() {
   useEffect(() => {
     const onPlayerDamaged = (damage: unknown) => {
       const parsedDamage = Number(damage);
-      updateHealth(Number.isFinite(parsedDamage) ? parsedDamage : 0);
+      if (!Number.isFinite(parsedDamage)) {
+        console.warn('Invalid player-damaged payload:', damage);
+        return;
+      }
+      updateHealth(parsedDamage);
     };
 
     EventBus.on('player-damaged', onPlayerDamaged);
@@ -21,7 +26,7 @@ export function HUD() {
     };
   }, [updateHealth]);
 
-  const percent = Math.max(0, Math.min(100, (health / MAX_HEALTH) * 100));
+  const percent = Math.max(0, Math.min(100, (health / MAX_PLAYER_HEALTH) * 100));
 
   return (
     <div className="pointer-events-none absolute left-4 top-4 z-10 w-64 rounded-md bg-black/60 p-3 text-white">
