@@ -10,13 +10,13 @@ export function HUD() {
   const updateHealth = usePlayerStore((state) => state.updateHealth);
 
   useEffect(() => {
-    const onPlayerDamaged = (damage: unknown) => {
-      const parsedDamage = Number(damage);
-      if (!Number.isFinite(parsedDamage)) {
-        console.warn('Invalid player-damaged payload:', damage);
+    const onPlayerDamaged = (damageAmount: unknown) => {
+      const parsedDamageAmount = Number(damageAmount);
+      if (!Number.isFinite(parsedDamageAmount)) {
+        console.warn('Invalid player-damaged payload:', damageAmount);
         return;
       }
-      updateHealth(parsedDamage);
+      updateHealth(parsedDamageAmount);
     };
 
     EventBus.on('player-damaged', onPlayerDamaged);
