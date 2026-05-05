@@ -1,73 +1,53 @@
-# React + TypeScript + Vite
+# flipflip
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+An AI-driven, browser-based RPG built with procedural generation powered by Large Language Models.
 
-Currently, two official plugins are available:
+## Tech Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React 18, Vite 6, TypeScript |
+| Styling | Tailwind CSS, shadcn/ui |
+| Game Engine | Phaser 3 |
+| State | Zustand (global), TanStack Query (async) |
+| Backend | Supabase (PostgreSQL, Auth, Edge Functions) |
 
-## React Compiler
+## Architecture
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+This project uses **Feature-Sliced Design (FSD)**:
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+src/
+├── entities/   # Domain models: Player, NPC, Item, Quest, …
+├── features/   # User-facing capabilities: combat, dialogue, inventory, …
+├── shared/     # Reusable primitives, Zustand store, utilities
+└── game/       # Phaser 3 scenes + EventBus bridge
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### React ↔ Phaser Bridge
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+React and Phaser **never share state directly**. All cross-boundary communication goes through the `EventBus` singleton (`src/game/EventBus.ts`):
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- Phaser scenes call `EventBus.emit('event', payload)`
+- React components subscribe in `useEffect` and push updates into Zustand
+
+### AI / LLM Integration
+
+All LLM calls are made through Supabase Edge Functions. Responses are validated against strict JSON Schemas before reaching the client — no raw prose.
+
+### NPC Memory
+
+NPC memory decay is implemented with [ts-fsrs](https://github.com/open-spaced-repetition/ts-fsrs).
+
+## Development
+
+```bash
+npm install
+npm run dev
+```
+
+## Build
+
+```bash
+npm run build
 ```
