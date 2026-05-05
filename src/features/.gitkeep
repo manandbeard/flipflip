@@ -1,0 +1,7 @@
+/**
+ * features/
+ *
+ * FSD "Features" layer.
+ * Contains user-facing capabilities (combat, dialogue, inventory, …).
+ * Features may import from entities/ and shared/, but NOT from each other.
+ */
