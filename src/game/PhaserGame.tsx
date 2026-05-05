@@ -1,17 +1,17 @@
-import { forwardRef } from 'react';
+import Phaser from 'phaser';
+import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
+import { EventBus } from './EventBus';
+import { gameConfig } from './main';
 
 /**
  * Ref handle exposed to parent components via forwardRef.
  *
  * `game`  — the running Phaser.Game instance (null before initialisation).
  * `scene` — the currently active Phaser Scene (null before the first scene starts).
- *
- * Typed as `object` until the `phaser` package is added as a dependency;
- * replace with `Phaser.Game` / `Phaser.Scene` at that point.
  */
 export interface PhaserGameRef {
-  game: object | null;
-  scene: object | null;
+  game: Phaser.Game | null;
+  scene: Phaser.Scene | null;
 }
 
 /** Props for PhaserGame (currently none; reserved for future configuration). */
@@ -26,10 +26,44 @@ export type PhaserGameProps = Record<string, never>;
  *  - Communication between scenes and React flows exclusively through EventBus;
  *    no Phaser types are imported into any other React component.
  */
-const PhaserGame = forwardRef<PhaserGameRef, PhaserGameProps>(function PhaserGame() {
-  // Phaser configuration and game initialisation will be wired here in a
-  // future phase.  For now the component only provides the mount point and
-  // the ref shape expected by parent components.
+const PhaserGame = forwardRef<PhaserGameRef, PhaserGameProps>(function PhaserGame(
+  _props,
+  ref,
+) {
+  const gameRef = useRef<Phaser.Game | null>(null);
+  const sceneRef = useRef<Phaser.Scene | null>(null);
+
+  useImperativeHandle(ref, () => ({
+    get game() {
+      return gameRef.current;
+    },
+    get scene() {
+      return sceneRef.current;
+    },
+  }));
+
+  useEffect(() => {
+    // Boot exactly once
+    if (gameRef.current) return;
+
+    gameRef.current = new Phaser.Game({
+      ...gameConfig,
+      parent: 'game-container',
+    });
+
+    const onSceneReady = (scene: unknown) => {
+      sceneRef.current = scene as Phaser.Scene;
+    };
+
+    EventBus.on('current-scene-ready', onSceneReady);
+
+    return () => {
+      EventBus.off('current-scene-ready', onSceneReady);
+      gameRef.current?.destroy(true);
+      gameRef.current = null;
+      sceneRef.current = null;
+    };
+  }, []);
 
   return <div id="game-container" />;
 });
