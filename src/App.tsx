@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
 import { useGameStore } from '@/shared';
 import { EventBus } from '@/game';
+import PhaserGame from '@/game/PhaserGame';
+import { HUD } from '@/features/hud/HUD';
 
 /**
  * App — root shell component.
@@ -29,14 +31,12 @@ function App() {
   }, [setPhase, setActiveScene]);
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-gray-950 text-white">
-      <h1 className="text-4xl font-bold tracking-tight">flipflip</h1>
-      <p className="mt-2 text-sm text-gray-400">
-        Phase 1 — Foundation scaffold ✓
-      </p>
-      <pre className="mt-6 rounded bg-gray-800 px-6 py-4 text-xs text-green-400">
+    <main className="relative min-h-screen bg-gray-950 text-white">
+      <HUD />
+      <div className="absolute bottom-4 left-4 z-10 rounded bg-gray-800 px-4 py-2 text-xs text-green-400">
         {JSON.stringify({ phase }, null, 2)}
-      </pre>
+      </div>
+      <PhaserGame />
     </main>
   );
 }
