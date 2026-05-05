@@ -5,6 +5,7 @@ const SPEED = 200;
 
 export class MainScene extends Phaser.Scene {
   private player!: Phaser.GameObjects.Rectangle;
+  private spaceKey!: Phaser.Input.Keyboard.Key;
   private cursors!: {
     up: Phaser.Input.Keyboard.Key;
     down: Phaser.Input.Keyboard.Key;
@@ -35,6 +36,7 @@ export class MainScene extends Phaser.Scene {
       left: kb.addKey(Phaser.Input.Keyboard.KeyCodes.A),
       right: kb.addKey(Phaser.Input.Keyboard.KeyCodes.D),
     };
+    this.spaceKey = kb.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
     EventBus.emit('current-scene-ready', this);
   }
@@ -64,5 +66,9 @@ export class MainScene extends Phaser.Scene {
     }
 
     body.setVelocity(vx, vy);
+
+    if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
+      EventBus.emit('player-damaged', 10);
+    }
   }
 }
