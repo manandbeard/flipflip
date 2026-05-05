@@ -1,0 +1,7 @@
+/**
+ * entities/
+ *
+ * FSD "Entities" layer.
+ * Contains domain objects (Player, NPC, Item, Quest, …) and their types/models.
+ * Entities may NOT import from features/ or higher layers.
+ */
