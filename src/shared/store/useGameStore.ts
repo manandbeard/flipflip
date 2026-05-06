@@ -21,12 +21,16 @@ export interface GameState {
   playerName: string | null;
   /** Active scene key reported by Phaser. */
   activeScene: string | null;
+  /** Whether the paywall modal is currently open. */
+  isPaywallOpen: boolean;
 }
 
 export interface GameActions {
   setPhase: (phase: GamePhase) => void;
   setPlayerName: (name: string) => void;
   setActiveScene: (scene: string) => void;
+  openPaywall: () => void;
+  closePaywall: () => void;
   reset: () => void;
 }
 
@@ -38,6 +42,7 @@ const initialState: GameState = {
   phase: 'idle',
   playerName: null,
   activeScene: null,
+  isPaywallOpen: false,
 };
 
 // ---------------------------------------------------------------------------
@@ -50,5 +55,7 @@ export const useGameStore = create<GameState & GameActions>((set) => ({
   setPhase: (phase) => set({ phase }),
   setPlayerName: (name) => set({ playerName: name }),
   setActiveScene: (scene) => set({ activeScene: scene }),
+  openPaywall: () => set({ isPaywallOpen: true }),
+  closePaywall: () => set({ isPaywallOpen: false }),
   reset: () => set(initialState),
 }));
