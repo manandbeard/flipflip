@@ -24,15 +24,26 @@ import type { Card } from "npm:ts-fsrs@^5";
  *
  * These two parameters are the core outputs of the FSRS algorithm and fully
  * describe how a memory decays over time:
- *   - `stability`: expected days until retrievability drops to 90 % after a
- *     successful review.
+ *   - `stability`: the review interval (in days) at which retrievability equals
+ *     90 %. Right after a review R = 100 %; after `stability` days it has
+ *     decayed TO 90 %; it continues falling from there.
  *   - `difficulty`: intrinsic difficulty of the memory (1–10 scale).
  *
- * Initialise new interactions with sensible defaults, e.g.:
+ * Important: this type is intended for **previously-reinforced** memories whose
+ * stability/difficulty have already been computed by the FSRS scheduler. The
+ * utility functions below treat every memory as `State.Review` (past-reinforced)
+ * and calculate how much it has decayed since `elapsedDays` ago. Do not pass
+ * zero-valued defaults for brand-new, un-reviewed interactions — initialise them
+ * via `fsrs().repeat()` first to obtain valid stability/difficulty values.
+ *
+ * Sensible starting values after a first successful reinforcement, e.g.:
  *   { stability: 1.0, difficulty: 5.0 }
  */
 export interface FSRSState {
-  /** Stability (S) — days until retrievability falls to 90 % post-review. */
+  /**
+   * Stability (S) — the review interval (days) at which R(t) = 90 %.
+   * Right after a review R = 100 %; after `stability` days R has dropped TO 90 %.
+   */
   stability: number;
   /** Difficulty (D) — intrinsic memory difficulty on a 1–10 scale. */
   difficulty: number;
@@ -98,9 +109,10 @@ export function getRetrievabilityScore(
   const card = hydrateCard(memoryState, lastReview);
 
   // scheduler.get_retrievability() returns a locale-independent string such as
-  // "82.56%" — normalise to a [0, 1] float.
+  // "82.56%" — strip the "%" suffix explicitly before parsing to avoid any
+  // ambiguity about parseFloat's non-numeric character truncation behaviour.
   const raw: string = scheduler.get_retrievability(card, now);
-  return parseFloat(raw) / 100;
+  return parseFloat(raw.replace("%", "")) / 100;
 }
 
 /**
