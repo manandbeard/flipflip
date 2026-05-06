@@ -19,6 +19,15 @@ const CORS_HEADERS: Record<string, string> = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+/**
+ * Token budget for the summary response.
+ * 20 sentences × ~25 tokens/sentence = ~500 tokens; 1 024 gives comfortable
+ * headroom while keeping costs predictable.
+ */
+const MAX_SUMMARY_TOKENS = 1024;
+
 // ─── Zod schema for structured output ────────────────────────────────────────
 
 const MemorySummarySchema = z.object({
@@ -124,7 +133,7 @@ Deno.serve(async (req: Request) => {
       ],
       response_format: zodResponseFormat(MemorySummarySchema, "memory_summary"),
       temperature: 0.3,
-      max_tokens: 1024,
+      max_tokens: MAX_SUMMARY_TOKENS,
     });
 
     const parsed = completion.choices[0]?.message?.parsed;
@@ -156,6 +165,30 @@ Deno.serve(async (req: Request) => {
   }
 
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+  // Verify the campaign exists before attempting an update.
+  // This prevents the service-role client from silently succeeding on an
+  // unknown campaign_id (which would be a no-op but could mask client bugs).
+  const { data: campaign, error: fetchError } = await supabase
+    .from("campaigns")
+    .select("id")
+    .eq("id", campaignId)
+    .maybeSingle();
+
+  if (fetchError) {
+    console.error("[summarize-memory] DB fetch error:", fetchError.message);
+    return new Response(JSON.stringify({ error: fetchError.message }), {
+      status: 502,
+      headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
+    });
+  }
+
+  if (!campaign) {
+    return new Response(JSON.stringify({ error: `Campaign '${campaignId}' not found` }), {
+      status: 404,
+      headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
+    });
+  }
 
   const { error: dbError } = await supabase
     .from("campaigns")
