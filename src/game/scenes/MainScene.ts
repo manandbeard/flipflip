@@ -2,6 +2,8 @@ import Phaser from 'phaser';
 import { EventBus } from '@/game/EventBus';
 
 const SPEED = 200;
+/** X coordinate of the right-side boundary that acts as the Level 1 exit gate. */
+const LEVEL_1_EXIT_X = 750;
 
 export class MainScene extends Phaser.Scene {
   private player!: Phaser.GameObjects.Rectangle;
@@ -12,6 +14,10 @@ export class MainScene extends Phaser.Scene {
     left: Phaser.Input.Keyboard.Key;
     right: Phaser.Input.Keyboard.Key;
   };
+  /** Prevents firing the paywall event multiple times per pause. */
+  private progressBlocked = false;
+  private readonly _handlePause = () => this.handlePause();
+  private readonly _handleResume = () => this.handleResume();
 
   constructor() {
     super({ key: 'MainScene' });
@@ -38,7 +44,29 @@ export class MainScene extends Phaser.Scene {
     };
     this.spaceKey = kb.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
+    // Listen for React → Phaser control commands
+    EventBus.on('scene-pause', this._handlePause);
+    EventBus.on('scene-resume', this._handleResume);
+
     EventBus.emit('current-scene-ready', this);
+  }
+
+  /**
+   * Called by Phaser when the scene is shut down (e.g. on scene transition or
+   * game destroy). Cleans up EventBus listeners to prevent memory leaks.
+   */
+  shutdown() {
+    EventBus.off('scene-pause', this._handlePause);
+    EventBus.off('scene-resume', this._handleResume);
+  }
+
+  private handlePause() {
+    this.scene.pause();
+  }
+
+  private handleResume() {
+    this.progressBlocked = false;
+    this.scene.resume();
   }
 
   update() {
@@ -66,6 +94,15 @@ export class MainScene extends Phaser.Scene {
     }
 
     body.setVelocity(vx, vy);
+
+    // Level 1 exit gate: player approaching the right boundary triggers paywall check
+    if (!this.progressBlocked && this.player.x >= LEVEL_1_EXIT_X) {
+      this.progressBlocked = true;
+      // Push player back so they can't walk through
+      body.setVelocity(0, 0);
+      this.player.x = LEVEL_1_EXIT_X - 20;
+      EventBus.emit('level-progress-attempt');
+    }
 
     if (Phaser.Input.Keyboard.JustDown(this.spaceKey)) {
       EventBus.emit('player-damaged', 10);
