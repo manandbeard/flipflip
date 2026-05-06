@@ -48,6 +48,7 @@ export function PaywallModal() {
 
           {/* CTA */}
           <div className="flex flex-col gap-3">
+            {/* TODO: replace href with your actual subscription/checkout URL */}
             <a
               href="#subscribe"
               className="inline-flex w-full items-center justify-center rounded-lg bg-yellow-500 px-6 py-3 text-sm font-semibold text-gray-900 transition-colors hover:bg-yellow-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yellow-500"

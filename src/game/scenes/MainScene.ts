@@ -51,6 +51,10 @@ export class MainScene extends Phaser.Scene {
     EventBus.emit('current-scene-ready', this);
   }
 
+  /**
+   * Called by Phaser when the scene is shut down (e.g. on scene transition or
+   * game destroy). Cleans up EventBus listeners to prevent memory leaks.
+   */
   shutdown() {
     EventBus.off('scene-pause', this._handlePause);
     EventBus.off('scene-resume', this._handleResume);
